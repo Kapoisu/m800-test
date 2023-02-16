@@ -1,0 +1,7 @@
+# Output
+build/
+
+# Visual Studio Code
+.vscode/*
+!.vscode/launch.json
+*.code-workspace
