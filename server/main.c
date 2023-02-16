@@ -1,11 +1,19 @@
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <sys/types.h>
+
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    typedef SOCKET file_descriptor;
+#else
+    #include <arpa/inet.h>
+    #include <netinet/in.h>
+    #include <sys/socket.h>
+    typedef int file_descriptor;
+#endif
 
 #define DEFAULT_IP_ADDRESS "127.0.0.1"
 #define DEFAULT_PORT_NUMBER 1024
@@ -16,8 +24,6 @@ enum argument {
     index_ip = 1,
     index_port = 2
 };
-
-typedef int file_descriptor;
 
 bool has_ip_address(int argc)
 {
@@ -31,7 +37,7 @@ bool has_port_number(int argc)
 
 int main(int argc, char *argv[])
 {
-    struct sockaddr_in server = {.sin_family = AF_INET, .sin_port = 0, .sin_addr = {0}};
+    struct sockaddr_in server = {.sin_family = AF_INET};
     const char* ip_address = DEFAULT_IP_ADDRESS;
     int port_number = DEFAULT_PORT_NUMBER;
 
@@ -73,14 +79,14 @@ int main(int argc, char *argv[])
     printf("Listen on [%s:%d]\n", ip_address, port_number);
 
     struct sockaddr_in client;
-    socklen_t client_len;
+    socklen_t address_length;
     char message[MESSAGE_SIZE_MAX + 1];
     message[MESSAGE_SIZE_MAX] = 0;
     char sender[ADDRESS_SIZE_MAX + 1];
     sender[ADDRESS_SIZE_MAX] = 0;
 
     while (true) {
-        if (recvfrom(socket_fd, message, MESSAGE_SIZE_MAX, 0, (struct sockaddr*)&client, &client_len) < 0) {
+        if (recvfrom(socket_fd, message, MESSAGE_SIZE_MAX, 0, (struct sockaddr*)&client, &address_length) < 0) {
             perror("Failed to receive the message.\n");
             continue;
         }
@@ -89,7 +95,7 @@ int main(int argc, char *argv[])
             printf("Message received from [%s:%d]: %s\n", sender, ntohs(client.sin_port), message);
         }
 
-        if (sendto(socket_fd, message, strlen(message), 0, (const struct sockaddr*)&client, client_len) < 0) {
+        if (sendto(socket_fd, message, (socklen_t)strlen(message), 0, (const struct sockaddr*)&client, address_length) < 0) {
             perror("Failed to send the message.\n");
             continue;
         }
