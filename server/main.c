@@ -9,7 +9,8 @@
 
 #define DEFAULT_IP_ADDRESS "127.0.0.1"
 #define DEFAULT_PORT_NUMBER 1024
-#define BUFFER_SIZE 1024
+#define MESSAGE_SIZE_MAX 1024
+#define ADDRESS_SIZE_MAX 15
 
 enum argument {
     index_ip = 1,
@@ -34,17 +35,14 @@ int main(int argc, char *argv[])
     const char* ip_address = DEFAULT_IP_ADDRESS;
     int port_number = DEFAULT_PORT_NUMBER;
 
-    printf("Start Echo Server.\n");
-    for (int i = 0; i < argc; ++i) {
-        printf("%s\n", argv[i]);
-    }
+    printf("Start echo server.\n");
 
     if (has_ip_address(argc)) {
         printf("IP address: %s\n", argv[index_ip]);
         ip_address = argv[index_ip];
     }
     else {
-        printf("IP address is not specified, use %s instead.\n", ip_address);
+        printf("IP address is not specified, use %s instead.\n", DEFAULT_IP_ADDRESS);
     }
 
     if (inet_pton(AF_INET, ip_address, &server.sin_addr) == 0) {
@@ -56,7 +54,7 @@ int main(int argc, char *argv[])
         port_number = atoi(argv[index_port]);
     }
     else {
-        printf("Port number is not specified, use %i instead.\n", port_number);
+        printf("Port number is not specified, use %d instead.\n", DEFAULT_PORT_NUMBER);
     }
 
     server.sin_port = htons((uint16_t)port_number);
@@ -72,22 +70,26 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    printf("Listen on %s:%d\n", ip_address, port_number);
+    printf("Listen on [%s:%d]\n", ip_address, port_number);
 
     struct sockaddr_in client;
     socklen_t client_len;
-    char message[BUFFER_SIZE];
+    char message[MESSAGE_SIZE_MAX + 1];
+    message[MESSAGE_SIZE_MAX] = 0;
+    char sender[ADDRESS_SIZE_MAX + 1];
+    sender[ADDRESS_SIZE_MAX] = 0;
+
     while (true) {
-        ssize_t bytes = recvfrom(socket_fd, message, BUFFER_SIZE, 0, (struct sockaddr*)&client, &client_len);
-        if (bytes < 0) {
+        if (recvfrom(socket_fd, message, MESSAGE_SIZE_MAX, 0, (struct sockaddr*)&client, &client_len) < 0) {
             perror("Failed to receive the message.\n");
             continue;
         }
 
-        printf("%.*s\n", (int)bytes, message);
-        bytes = sendto(socket_fd, message, (size_t)bytes, 0, (const struct sockaddr*)&client, client_len);
+        if (inet_ntop(AF_INET, &client.sin_addr, sender, ADDRESS_SIZE_MAX) != 0) {
+            printf("Message received from [%s:%d]: %s\n", sender, ntohs(client.sin_port), message);
+        }
 
-        if (bytes < 0) {
+        if (sendto(socket_fd, message, strlen(message), 0, (const struct sockaddr*)&client, client_len) < 0) {
             perror("Failed to send the message.\n");
             continue;
         }
