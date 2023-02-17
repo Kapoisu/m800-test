@@ -20,21 +20,6 @@
 #define MESSAGE_SIZE_MAX 1024
 #define ADDRESS_SIZE_MAX 15
 
-enum argument {
-    index_ip = 1,
-    index_port = 2
-};
-
-bool has_ip_address(int argc)
-{
-    return argc > index_ip ? true : false;
-}
-
-bool has_port_number(int argc)
-{
-    return argc > index_port ? true : false;
-}
-
 void print_manual()
 {
     printf("Usage: server [-h | --help] [--ip=<address>] [--port=<number>]\n");
@@ -61,26 +46,42 @@ int main(int argc, char *argv[])
 
     printf("Start echo server.\n");
 
-    if (has_ip_address(argc)) {
-        printf("IP address: %s\n", argv[index_ip]);
-        ip_address = argv[index_ip];
+    bool has_ip = false;
+    bool has_port = false;
+
+    for (int i = 1; i < argc; ++i) {
+        const char *key = strtok(argv[i], "=");
+
+        if (strcmp(key, "--ip") == 0) {
+            const char* value = strtok(NULL, "");
+            ip_address = value;
+            has_ip = true;
+        }
+
+        if (strcmp(key, "--port") == 0) {
+            const char* value = strtok(NULL, "");
+            port_number = atoi(value);
+            has_port = true;
+        }
+    }
+
+    if (has_ip) {
+        printf("IP address: %s\n", ip_address);
     }
     else {
         printf("IP address is not specified, use %s instead.\n", DEFAULT_IP_ADDRESS);
     }
 
-    if (inet_pton(AF_INET, ip_address, &server.sin_addr) == 0) {
-        perror("IP address");
-    }
-
-    if (has_port_number(argc)) {
-        printf("Port: %s\n", argv[index_port]);
-        port_number = atoi(argv[index_port]);
+    if (has_port) {
+        printf("Port: %d\n", port_number);
     }
     else {
         printf("Port number is not specified, use %d instead.\n", DEFAULT_PORT_NUMBER);
     }
 
+    if (inet_pton(AF_INET, ip_address, &server.sin_addr) == 0) {
+        perror("IP address");
+    }
     server.sin_port = htons((uint16_t)port_number);
 
     file_descriptor socket_fd = socket(AF_INET, SOCK_DGRAM, PF_UNSPEC);
