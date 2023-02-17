@@ -35,8 +35,26 @@ bool has_port_number(int argc)
     return argc > index_port ? true : false;
 }
 
+void print_manual()
+{
+    printf("Usage: server [-h | --help] [--ip=<address>] [--port=<number>]\n");
+    printf("\nA simple UDP echo server.\n");
+    printf("\nOptions:\n");
+    printf("    --ip    The IP address of the host.\n");
+    printf("    --port  The port number you want to listen to.\n");
+    printf("\nExample:\n");
+    printf("    ./server --ip=127.0.0.1 --port=1024\n");
+    printf("\nNote:\n");
+    printf("    On some operating systems, you might need root access to use privileged port numbers.\n");
+}
+
 int main(int argc, char *argv[])
 {
+    if (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
+        print_manual();
+        return 0;
+    }
+
     struct sockaddr_in server = {.sin_family = AF_INET};
     const char* ip_address = DEFAULT_IP_ADDRESS;
     int port_number = DEFAULT_PORT_NUMBER;
