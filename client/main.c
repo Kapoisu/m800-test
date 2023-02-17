@@ -9,6 +9,7 @@
 #ifdef _WIN32
     #include <winsock2.h>
     #include <ws2tcpip.h>
+    #undef max
     typedef SOCKET file_descriptor;
 #else
     #include <arpa/inet.h>
@@ -150,7 +151,7 @@ int main(int argc, char *argv[])
     bool can_retry = false;
 
     do {
-        if (sendto(socket_fd, message, strlen(message), 0, (const struct sockaddr*)&server, sizeof(server)) < 0) {
+        if (sendto(socket_fd, message, (socklen_t)strlen(message), 0, (const struct sockaddr*)&server, sizeof(server)) < 0) {
             perror("Send message");
         }
         else if (recvfrom(socket_fd, message, MESSAGE_SIZE_MAX, 0, NULL, NULL) < 0) {
