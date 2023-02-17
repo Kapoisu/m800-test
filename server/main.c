@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     }
 
     if (inet_pton(AF_INET, ip_address, &server.sin_addr) == 0) {
-        perror("The IP address is invalid.\n");
+        perror("IP address");
     }
 
     if (has_port_number(argc)) {
@@ -67,13 +67,13 @@ int main(int argc, char *argv[])
 
     file_descriptor socket_fd = socket(AF_INET, SOCK_DGRAM, PF_UNSPEC);
     if (socket_fd < 0) {
-        perror("Failed to open a socket.\n");
-        return 1;
+        perror("Create socket");
+        return EXIT_FAILURE;
     }
 
     if (bind(socket_fd, (const struct sockaddr*)&server, sizeof(server)) < 0) {
-        perror("Failed to bind the socket.\n");
-        return 1;
+        perror("Bind socket");
+        return EXIT_FAILURE;
     }
 
     printf("Listen on [%s:%d]\n", ip_address, port_number);
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 
     while (true) {
         if (recvfrom(socket_fd, message, MESSAGE_SIZE_MAX, 0, (struct sockaddr*)&client, &address_length) < 0) {
-            perror("Failed to receive the message.\n");
+            perror("Receive message");
             continue;
         }
 
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
         }
 
         if (sendto(socket_fd, message, (socklen_t)strlen(message), 0, (const struct sockaddr*)&client, address_length) < 0) {
-            perror("Failed to send the message.\n");
+            perror("Send message");
             continue;
         }
     }
