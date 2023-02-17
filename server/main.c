@@ -1,3 +1,4 @@
+#include <cargs.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -20,6 +21,12 @@
 #define MESSAGE_SIZE_MAX 1024
 #define ADDRESS_SIZE_MAX 15
 
+enum option_t {
+    opt_help,
+    opt_ip,
+    opt_port
+};
+
 void print_manual()
 {
     printf("Usage: server [-h | --help] [--ip=<address>] [--port=<number>]\n");
@@ -35,52 +42,61 @@ void print_manual()
 
 int main(int argc, char *argv[])
 {
-    if (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
-        print_manual();
-        return 0;
-    }
+    cag_option_context context;
+    struct cag_option options[] = {
+        {.identifier = opt_help, .access_letters = "h", .access_name = "help"},
+        {.identifier = opt_ip, .access_letters = NULL, .access_name = "ip", .value_name = "address"},
+        {.identifier = opt_port, .access_letters = NULL, .access_name = "port", .value_name = "number"},
+    };
+
+    cag_option_prepare(&context, options, CAG_ARRAY_SIZE(options), argc, argv);
 
     struct sockaddr_in server = {.sin_family = AF_INET};
     const char* ip_address = DEFAULT_IP_ADDRESS;
     int port_number = DEFAULT_PORT_NUMBER;
-
-    printf("Start echo server.\n");
-
     bool has_ip = false;
     bool has_port = false;
 
-    for (int i = 1; i < argc; ++i) {
-        const char *key = strtok(argv[i], "=");
-
-        if (strcmp(key, "--ip") == 0) {
-            const char* value = strtok(NULL, "");
-            ip_address = value;
-            has_ip = true;
+    while (cag_option_fetch(&context)) {
+        const char *value = NULL;
+        switch (cag_option_get(&context)) {
+            case opt_help:
+                if (argc == 2) {
+                    print_manual();
+                    return 0;
+                }
+            case opt_ip:
+                value = cag_option_get_value(&context);
+                if (value != NULL) {
+                    ip_address = value;
+                    has_ip = true;
+                }
+                break;
+            case opt_port:
+                value = cag_option_get_value(&context);
+                if (value != NULL) {
+                    port_number = atoi(value);
+                    has_port = true;
+                }
+                break;
+            default:
+                break;
         }
-
-        if (strcmp(key, "--port") == 0) {
-            const char* value = strtok(NULL, "");
-            port_number = atoi(value);
-            has_port = true;
-        }
     }
 
-    if (has_ip) {
-        printf("IP address: %s\n", ip_address);
-    }
-    else {
-        printf("IP address is not specified, use %s instead.\n", DEFAULT_IP_ADDRESS);
+    printf("Start echo server.\n");
+
+    if (!has_ip) {
+        printf("\nIP address is not specified, use %s instead.\n", DEFAULT_IP_ADDRESS);
     }
 
-    if (has_port) {
-        printf("Port: %d\n", port_number);
-    }
-    else {
-        printf("Port number is not specified, use %d instead.\n", DEFAULT_PORT_NUMBER);
+    if (!has_port) {
+        printf("\nPort number is not specified, use %d instead.\n", DEFAULT_PORT_NUMBER);
     }
 
-    if (inet_pton(AF_INET, ip_address, &server.sin_addr) == 0) {
-        perror("IP address");
+    if (inet_pton(AF_INET, ip_address, &server.sin_addr) < 1) {
+        printf("IP address: invalid argument\n");
+        return EXIT_FAILURE;
     }
     server.sin_port = htons((uint16_t)port_number);
 
@@ -95,14 +111,12 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    printf("Listen on [%s:%d]\n", ip_address, port_number);
+    printf("\nListen on [%s:%d]\n", ip_address, port_number);
 
     struct sockaddr_in client;
     socklen_t address_length;
-    char message[MESSAGE_SIZE_MAX + 1];
-    message[MESSAGE_SIZE_MAX] = 0;
-    char sender[ADDRESS_SIZE_MAX + 1];
-    sender[ADDRESS_SIZE_MAX] = 0;
+    char message[MESSAGE_SIZE_MAX + 1] = {0};
+    char sender[ADDRESS_SIZE_MAX + 1] = {0};
 
     while (true) {
         if (recvfrom(socket_fd, message, MESSAGE_SIZE_MAX, 0, (struct sockaddr*)&client, &address_length) < 0) {
