@@ -115,7 +115,9 @@ int main(int argc, char *argv[])
         }
     }
 
-    strncpy(message, argv[context.index], MESSAGE_SIZE_MAX);
+    if (context.index < argc) {
+        strncpy(message, argv[context.index], MESSAGE_SIZE_MAX);
+    }
 
     printf("Start message sender.\n");
 
