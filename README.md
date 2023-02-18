@@ -35,11 +35,11 @@ $ cmake -G "MinGW Makefiles" ..
 ## Usage
 ### Server
 ```
-<server_executable> [-h | --help] [--ip=<address>] [--port=<number>]
+$ <server_executable> [-h | --help] [--ip=<address>] [--port=<number>]
 ```
 ### Client
 ```
-<client_executable> [-h | --help] [--ip=<address>] [--port=<number>] [--max-retry=<number>] <message>
+$ <client_executable> [-h | --help] [--ip=<address>] [--port=<number>] [--max-retry=<number>] <message>
 ```
 
 ## Demo
