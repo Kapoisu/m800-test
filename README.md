@@ -7,7 +7,6 @@ There are two primary modules within this project.
 ## Tools
 * CMake: building
 * GCC: compiler
-* Visual Studio Code: editor
 
 ## Dependencies
 * cargs: a third party library for parsing command-line arguments.
@@ -33,4 +32,12 @@ If you're building the project on Windows with MinGW, you might have to specify 
 $ cmake -G "MinGW Makefiles" ..
 ```
 
-You don't have to worry about third-party dependencies. They were pre-built and included in the repository.
+## Usage
+### Server
+```
+<server_executable> [-h | --help] [--ip=<address>] [--port=<number>]
+```
+### Client
+```
+<client_executable> [-h | --help] [--ip=<address>] [--port=<number>] [--max-retry=<number>] <message>
+```
