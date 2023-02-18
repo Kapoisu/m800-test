@@ -46,3 +46,6 @@ $ <client_executable> [-h | --help] [--ip=<address>] [--port=<number>] [--max-re
 
 ## Demo
 https://user-images.githubusercontent.com/38966207/219833647-6af9c54a-1be3-4de7-a8ba-adc72dc602f5.mp4
+
+## Note
+* If you want to test the program on Debian 10, you probably have to install CMake (version >= 3.14) manually.
