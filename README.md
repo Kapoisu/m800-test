@@ -4,6 +4,8 @@ There are two primary modules within this project.
 * UDP echo server: receive messages from clients and reply with the same messages.
 * UDP client: send a message to a specific server and print the echo message.
 
+The client can retry the sending procedure upon a failure if the ```--max-retry``` option is speficied.
+
 ## Tools
 * CMake: building
 * GCC: compiler
