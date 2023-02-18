@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.14)
 project(m800-test)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
