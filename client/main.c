@@ -22,7 +22,12 @@
 #define DEFAULT_PORT_NUMBER 1024
 #define MESSAGE_SIZE_MAX 1024
 
-#define RETRY_INTERVAL_BASE 500 // in milliseconds
+/*
+    The client should resend the message after a specific timeout has passed.
+    The timeout is determined by min(RETRY_INTERVAL_BASE * (RETRY_INTERVAL_MULTIPLIER ^ retry_time), RETRY_INTERVAL_MAX),
+    where RETRY_INTERVAL_BASE and RETRY_INTERVAL_MAX are specified in milliseconds.
+*/
+#define RETRY_INTERVAL_BASE 500
 #define RETRY_INTERVAL_MULTIPLIER 2
 #define RETRY_INTERVAL_MAX 8000
 
@@ -137,12 +142,13 @@ int main(int argc, char *argv[])
 
     file_descriptor socket_fd = socket(AF_INET, SOCK_DGRAM, PF_UNSPEC);
     if (socket_fd < 0) {
-        perror("Create socket");
+        perror("socket()");
         return EXIT_FAILURE;
     }
 
+    // It seems that this call only keeps the information of the server because UDP is connection-less.
     if (connect(socket_fd, (const struct sockaddr*)&server, sizeof(server)) < 0) {
-        perror("Connect");
+        perror("connect()");
         return EXIT_FAILURE;
     }
 
