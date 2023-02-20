@@ -40,6 +40,15 @@ void print_manual()
     printf("    On some operating systems, you might need root access to use privileged port numbers.\n");
 }
 
+void print_error(const char* event)
+{
+#ifdef _WIN32
+    printf("%s: %d\n", event, WSAGetLastError());
+#else
+    perror(event);
+#endif
+}
+
 int main(int argc, char *argv[])
 {
 #ifdef _WIN32
@@ -106,12 +115,12 @@ int main(int argc, char *argv[])
 
     file_descriptor socket_fd = socket(AF_INET, SOCK_DGRAM, PF_UNSPEC);
     if (socket_fd < 0) {
-        perror("socket()");
+        print_error("socket()");
         return EXIT_FAILURE;
     }
 
     if (bind(socket_fd, (const struct sockaddr*)&server, sizeof(server)) < 0) {
-        perror("bind()");
+        print_error("bind()");
         return EXIT_FAILURE;
     }
 
@@ -124,7 +133,7 @@ int main(int argc, char *argv[])
 
     while (true) {
         if (recvfrom(socket_fd, message, MESSAGE_SIZE_MAX, 0, (struct sockaddr*)&client, &address_length) < 0) {
-            perror("recvfrom()");
+            print_error("recvfrom()");
             continue;
         }
 
@@ -133,7 +142,7 @@ int main(int argc, char *argv[])
         }
 
         if (sendto(socket_fd, message, (socklen_t)strlen(message), 0, (const struct sockaddr*)&client, address_length) < 0) {
-            perror("sendto()");
+            print_error("sendto()");
             continue;
         }
     }

@@ -51,6 +51,15 @@ void print_manual()
     printf("    ./client --ip=127.0.0.1 --port=1024\n");
 }
 
+void print_error(const char* event)
+{
+#ifdef _WIN32
+    printf("%s: %d\n", event, WSAGetLastError());
+#else
+    perror(event);
+#endif
+}
+
 unsigned int min(unsigned int a, unsigned int b)
 {
     return a > b ? b : a;
@@ -147,13 +156,13 @@ int main(int argc, char *argv[])
 
     file_descriptor socket_fd = socket(AF_INET, SOCK_DGRAM, PF_UNSPEC);
     if (socket_fd < 0) {
-        perror("socket()");
+        print_error("socket()");
         return EXIT_FAILURE;
     }
 
     // It seems that this call only keeps the information of the server because UDP is connection-less.
     if (connect(socket_fd, (const struct sockaddr*)&server, sizeof(server)) < 0) {
-        perror("connect()");
+        print_error("connect()");
         return EXIT_FAILURE;
     }
 
@@ -170,7 +179,7 @@ int main(int argc, char *argv[])
 
         bool has_error = sendto(socket_fd, message, (socklen_t)strlen(message), 0, (const struct sockaddr*)&server, sizeof(server)) < 0;
         if (has_error) {
-            perror("sendto()");
+            print_error("sendto()");
             sleep_ms(wait_interval);
         }
         else {
@@ -180,7 +189,7 @@ int main(int argc, char *argv[])
         }
 
         if (has_error) {
-            perror("select()");
+            print_error("select()");
             sleep_ms(wait_interval);
         }
         else if (FD_ISSET(socket_fd, &read_fds)) {
@@ -191,7 +200,7 @@ int main(int argc, char *argv[])
                     This occurs when the server program isn't running.
                     The file descriptor would remain set so that the recvfrom() would be called as well.
                 */
-                perror("recvfrom()");
+                print_error("recvfrom()");
                 sleep_ms(wait_interval);
             }
             else {
