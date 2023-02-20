@@ -42,6 +42,10 @@ void print_manual()
 
 int main(int argc, char *argv[])
 {
+#ifdef _WIN32
+    WSADATA wsa_data;
+    WSAStartup(2, &wsa_data);
+#endif
     cag_option_context context;
     struct cag_option options[] = {
         {.identifier = opt_help, .access_letters = "h", .access_name = "help"},
@@ -114,7 +118,7 @@ int main(int argc, char *argv[])
     printf("\nListen on [%s:%d]\n", ip_address, port_number);
 
     struct sockaddr_in client;
-    socklen_t address_length;
+    socklen_t address_length = sizeof(client);
     char message[MESSAGE_SIZE_MAX + 1] = {0};
     char sender[ADDRESS_SIZE_MAX + 1] = {0};
 

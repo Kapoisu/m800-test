@@ -70,6 +70,10 @@ void sleep_ms(unsigned int milliseconds)
 
 int main(int argc, char *argv[])
 {
+#ifdef _WIN32
+    WSADATA wsa_data;
+    WSAStartup(2, &wsa_data);
+#endif
     cag_option_context context;
     struct cag_option options[] = {
         {.identifier = opt_help, .access_letters = "h", .access_name = "help"},
