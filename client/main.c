@@ -9,7 +9,7 @@
 #ifdef _WIN32
     #include <winsock2.h>
     #include <ws2tcpip.h>
-    #undef max
+    #undef min
     typedef SOCKET file_descriptor;
 #else
     #include <arpa/inet.h>
@@ -45,9 +45,9 @@ void print_manual()
     printf("    ./client --ip=127.0.0.1 --port=1024\n");
 }
 
-unsigned int max(unsigned int value, unsigned int max_value)
+unsigned int min(unsigned int a, unsigned int b)
 {
-    return value > max_value ? max_value : value;
+    return a > b ? b : a;
 }
 
 void sleep_ms(unsigned int milliseconds)
