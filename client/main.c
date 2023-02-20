@@ -14,6 +14,7 @@
 #else
     #include <arpa/inet.h>
     #include <netinet/in.h>
+    #include <sys/select.h>
     #include <sys/socket.h>
     typedef int file_descriptor;
 #endif
@@ -157,24 +158,47 @@ int main(int argc, char *argv[])
     int retry = 0;
     unsigned int wait_interval = RETRY_INTERVAL_BASE;
     bool can_retry = false;
+    fd_set read_fds;
 
     do {
-        if (sendto(socket_fd, message, (socklen_t)strlen(message), 0, (const struct sockaddr*)&server, sizeof(server)) < 0) {
-            perror("Send message");
-        }
-        else if (recvfrom(socket_fd, message, MESSAGE_SIZE_MAX, 0, NULL, NULL) < 0) {
-            perror("Receive message");
+        FD_ZERO(&read_fds);
+        FD_SET(socket_fd, &read_fds);
+
+        bool has_error = sendto(socket_fd, message, (socklen_t)strlen(message), 0, (const struct sockaddr*)&server, sizeof(server)) < 0;
+        if (has_error) {
+            perror("sendto()");
+            sleep_ms(wait_interval);
         }
         else {
-            printf("Echo received: %s\n", message);
-            break;
+            struct timeval timeout = {.tv_sec = wait_interval / 1000, .tv_usec = wait_interval % 1000 * 1000};
+            printf("Waiting for response...\n");
+            has_error = select(socket_fd + 1, &read_fds, NULL, NULL, &timeout) < 0;
+        }
+
+        if (has_error) {
+            perror("select()");
+            sleep_ms(wait_interval);
+        }
+        else if (FD_ISSET(socket_fd, &read_fds)) {
+            has_error = recvfrom(socket_fd, message, MESSAGE_SIZE_MAX, 0, NULL, NULL) < 0;
+
+            if (has_error) {
+                /*
+                    This occurs when the server program isn't running.
+                    The file descriptor would remain set so that the recvfrom() would be called as well.
+                */
+                perror("recvfrom()");
+                sleep_ms(wait_interval);
+            }
+            else {
+                printf("Echo received: %s\n", message);
+                break;
+            }
         }
 
         can_retry = retry < max_retry;
         if (can_retry) {
-            printf("Waiting to retry...\n");
-            wait_interval *= RETRY_INTERVAL_MULTIPLIER;
-            sleep_ms(max(wait_interval, RETRY_INTERVAL_MAX));
+            wait_interval = min(wait_interval * RETRY_INTERVAL_MULTIPLIER, RETRY_INTERVAL_MAX);
             ++retry;
         }
         else {
